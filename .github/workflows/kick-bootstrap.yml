@@ -2,7 +2,7 @@ name: Kick Bootstrap
 
 on:
   pull_request:
-    types: [opened, reopened]
+    types: [opened, reopened, synchronize]
     branches: [main]
 
 permissions:
@@ -20,10 +20,17 @@ jobs:
           ref: feature/devflow-bootstrap
           fetch-depth: 0
           persist-credentials: true
-      - name: Push bootstrap trigger commit
+      - name: Touch the bootstrap workflow exactly once
         run: |
           set -euo pipefail
+          TARGET=.github/workflows/bootstrap-devflow.yml
+          if grep -Fq '# bootstrap-triggered' "$TARGET"; then
+            echo 'Bootstrap workflow has already been triggered.'
+            exit 0
+          fi
+          printf '\n# bootstrap-triggered\n' >> "$TARGET"
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git commit --allow-empty -m "chore: trigger devflow materialization"
+          git add "$TARGET"
+          git commit -m "chore: trigger devflow materialization"
           git push origin HEAD:feature/devflow-bootstrap
