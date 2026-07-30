@@ -1,64 +1,78 @@
 {
-  "schema_version": 2,
-  "state_revision": 3,
-  "task_id": "ascope-security-status-v1",
-  "title": "A-SCOPE current security status reconciliation",
-  "status": "VERIFYING",
-  "execution_status": "COMPLETED",
   "acceptance": {
+    "details_path": "docs/implementation/ascope-security-status-v1/W02_result.md",
     "domain": "ascope-security-master",
-    "status": "PASS",
     "reason_code": "CURRENT_STATUS_RECONCILIATION_AND_PARTITION_PASS",
-    "details_path": "docs/implementation/ascope-security-status-v1/W02_result.md"
+    "status": "PASS"
   },
-  "security_status": "PASS",
-  "working_branch": "feature/ascope-security-status-v1",
-  "pull_request": 8,
   "base_sha_at_start": "02907f5706ed7d7fafb1027e161682c7a7461bb9",
-  "last_product_commit_sha": "f5f95d0308dceeb549d5ab639386034af90ac359",
-  "last_state_commit_sha": null,
   "current_stage": "W02",
-  "last_completed_stage": "W01",
-  "last_successful_step": "W02_premerge_status_gates_pass",
-  "next_action": "Merge PR 8, exact-merge verify, then generate the trusted status-aware financial request artifact.",
+  "execution_status": "COMPLETED",
   "gate_results": {
-    "test": {"status": "PASS", "run_id": 30515798464},
-    "state_consistency": {"status": "PASS", "run_id": 30515798443},
-    "fixture_regression": {"status": "PASS", "run_id": 30515798446},
-    "secret_audit": {"status": "PASS", "run_id": 30515798510},
+    "fixture_regression": {
+      "run_id": 30515798446,
+      "status": "PASS"
+    },
     "live_status_smoke": {
-      "status": "PASS",
-      "run_id": 30515798465,
+      "archive_or_delisted_count": 339,
       "identity_count": 6143,
       "listed_count": 5538,
-      "standard_non_st_count": 5329,
+      "review_count": 266,
+      "run_id": 30515798465,
       "st_count": 209,
-      "archive_or_delisted_count": 339,
-      "review_count": 266
+      "standard_non_st_count": 5329,
+      "status": "PASS"
+    },
+    "secret_audit": {
+      "run_id": 30515798510,
+      "status": "PASS"
+    },
+    "state_consistency": {
+      "run_id": 30515798443,
+      "status": "PASS"
+    },
+    "test": {
+      "run_id": 30515798464,
+      "status": "PASS"
     }
   },
-  "retry_budget": {
-    "infrastructure": 3,
-    "agent_sessions": 0,
-    "agent_recovery_generations": 0,
-    "same_root_cause_limit": 2
-  },
   "human_gate": {
-    "required": false,
-    "reason": null,
     "minimum_action": null,
+    "reason": null,
+    "required": false,
     "resume_from": null
   },
-  "post_merge": {
-    "status": "PENDING",
-    "merge_sha": null,
-    "verified_run_ids": []
-  },
+  "last_completed_stage": "W02",
+  "last_product_commit_sha": "cbf3f9407dbf5899ca6066857d5630c398de7453",
+  "last_state_commit_sha": null,
+  "last_successful_step": "exact_merge_post_merge_pass",
+  "next_action": "none",
   "notification": {
-    "generation": 0,
-    "last_type": null,
     "acknowledged": true,
-    "control_issue_number": 7
+    "control_issue_number": 7,
+    "generation": 0,
+    "last_type": null
   },
-  "updated_at_utc": "2026-07-30T05:10:24Z"
+  "post_merge": {
+    "merge_sha": "cbf3f9407dbf5899ca6066857d5630c398de7453",
+    "status": "PASS",
+    "verified_run_ids": [
+      30515984715
+    ]
+  },
+  "pull_request": 8,
+  "retry_budget": {
+    "agent_recovery_generations": 0,
+    "agent_sessions": 0,
+    "infrastructure": 3,
+    "same_root_cause_limit": 2
+  },
+  "schema_version": 2,
+  "security_status": "PASS",
+  "state_revision": 4,
+  "status": "DONE",
+  "task_id": "ascope-security-status-v1",
+  "title": "A-SCOPE current security status reconciliation",
+  "updated_at_utc": "2026-07-30T05:13:27Z",
+  "working_branch": "feature/ascope-security-status-v1"
 }

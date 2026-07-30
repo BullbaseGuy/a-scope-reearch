@@ -48,7 +48,7 @@
       "publish_branch": null,
       "pull_request": 8,
       "state_path": "docs/implementation/ascope-security-status-v1/task_state.yaml",
-      "status": "VERIFYING",
+      "status": "DONE",
       "task_branch": null,
       "task_id": "ascope-security-status-v1",
       "title": "A-SCOPE current security status reconciliation"
