@@ -1,0 +1,38 @@
+name: Devflow Legacy Codex Branch Audit
+
+on:
+  schedule:
+    - cron: '23 3 * * 6'
+  create:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository history
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55
+        with:
+          python-version: '3.12'
+      - name: Collect managed task branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/branches?per_page=100" \
+            --jq '[.[].name | select(startswith("task/agent-"))]' \
+            > /tmp/task-branches.json
+      - name: Audit legacy data-only branches without model execution
+        run: |
+          python scripts/devflow/legacy_codex_branch_audit.py \
+            --branches /tmp/task-branches.json \
+            --output legacy-codex-branch-audit.json
