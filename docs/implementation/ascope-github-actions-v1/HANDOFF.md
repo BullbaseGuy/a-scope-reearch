@@ -1,12 +1,33 @@
-# Handoff
+# HANDOFF: ascope-github-actions-v1
 
-W00-W10 deterministic software implementation and GitHub-hosted verification passed.
+## Current facts
 
-Resume from the canonical next action:
+- Status: DONE
+- Execution: COMPLETED
+- Acceptance: ascope-product/PASS
+- Security: PASS
+- Stage: W11
+- Branch: `feature/ascope-github-actions-v1`
+- Pull request: 4
+- Last successful step: `exact_merge_post_merge_pass`
+- Next action: `none`
 
-1. review PR #4 and merge after the current successful checks remain attached to the head commit;
-2. let `Devflow Post Merge` verify the exact merged commit and finalize canonical state;
-3. separately satisfy non-blocking manual action MA-002 by supplying a validated point-in-time market and financial bundle;
-4. run `A-SCOPE Monthly Screening` only with that validated LIVE artifact.
+## Current block
 
-Do not repeat W00-W10 and do not treat fixture candidates as investable securities.
+None
+
+## Minimum human action
+
+None
+
+## Resume order
+
+1. `task_state.yaml`
+2. current GitHub Checks and bounded artifacts
+3. current `Wxx_plan.md` / `Wxx_result.md`
+4. this file
+5. `docs/process/README.md`
+
+## Retry budget
+
+`{'infrastructure': 3, 'agent_sessions': 0, 'agent_recovery_generations': 0, 'same_root_cause_limit': 2}`
