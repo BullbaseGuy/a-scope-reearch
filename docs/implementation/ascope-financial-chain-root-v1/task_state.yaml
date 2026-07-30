@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "state_revision": 1,
+  "state_revision": 2,
   "task_id": "ascope-financial-chain-root-v1",
   "title": "A-SCOPE reconciled financial request chain",
   "status": "VERIFYING",
@@ -13,14 +13,14 @@
   },
   "security_status": "PASS",
   "working_branch": "feature/ascope-financial-chain-root-v1",
-  "pull_request": null,
+  "pull_request": 11,
   "base_sha_at_start": "56bf9dd4de802fccda391850db28258c5aacdf9f",
-  "last_product_commit_sha": "56bf9dd4de802fccda391850db28258c5aacdf9f",
+  "last_product_commit_sha": "b47dc05b813da20217b1f4d5fc1d76d31652e068",
   "last_state_commit_sha": null,
   "current_stage": "W02",
   "last_completed_stage": "W01",
   "last_successful_step": "W01_reconciled_artifact_selection_implemented",
-  "next_action": "Open the governed PR and run W02 gates.",
+  "next_action": "Run deterministic W02 gates, merge PR 11 and verify the automatic status-aware financial request artifact.",
   "gate_results": {},
   "retry_budget": {
     "infrastructure": 3,
@@ -45,5 +45,5 @@
     "acknowledged": true,
     "control_issue_number": 10
   },
-  "updated_at_utc": "2026-07-30T05:22:00Z"
+  "updated_at_utc": "2026-07-30T05:22:30Z"
 }
