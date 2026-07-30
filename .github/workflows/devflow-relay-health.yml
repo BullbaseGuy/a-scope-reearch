@@ -1,0 +1,30 @@
+name: Devflow Relay Health
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  configuration-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out trusted configuration
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Enforce zero-request default
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          policy = json.loads(Path('.devflow/codex-entrypoints.yaml').read_text(encoding='utf-8'))
+          paid = policy['paid_probe_policy']
+          if paid['maximum_requests_per_dispatch'] != 0:
+              raise SystemExit('paid probe request limit must remain zero')
+          print('RELAY_HEALTH=CONFIGURATION_ONLY')
+          print('NETWORK_REQUESTS=0')
+          PY
