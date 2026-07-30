@@ -22,7 +22,7 @@
       "task_branch": null,
       "publish_branch": null,
       "pull_request": 4,
-      "current_stage": "W10",
+      "current_stage": "W11",
       "post_merge_profile": "post-merge",
       "notify_completion": true,
       "state_path": "docs/implementation/ascope-github-actions-v1/task_state.yaml"
