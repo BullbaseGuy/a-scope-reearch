@@ -1,0 +1,185 @@
+name: A-SCOPE Publish Financial Requests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/ascope-publish-financial-requests.yml
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: Successful A-SCOPE Financial Request Manifest run ID
+        required: true
+        default: '30529291404'
+        type: string
+      release_tag:
+        description: Immutable release tag
+        required: true
+        default: ascope-financial-requests-2026-07-30-v1
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: ascope-publish-financial-requests
+  cancel-in-progress: false
+
+env:
+  DEFAULT_SOURCE_RUN_ID: '30529291404'
+  DEFAULT_RELEASE_TAG: ascope-financial-requests-2026-07-30-v1
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Resolve immutable publication identity
+        id: identity
+        shell: bash
+        env:
+          INPUT_RUN_ID: ${{ inputs.source_run_id }}
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          run_id="${INPUT_RUN_ID:-$DEFAULT_SOURCE_RUN_ID}"
+          tag="${INPUT_RELEASE_TAG:-$DEFAULT_RELEASE_TAG}"
+          [[ "$run_id" =~ ^[0-9]+$ ]]
+          [[ "$tag" =~ ^ascope-financial-requests-[0-9]{4}-[0-9]{2}-[0-9]{2}-v[0-9]+$ ]]
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "asset=$tag.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Download exact financial-request artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.identity.outputs.run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p incoming
+          gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --json status,conclusion,event,headBranch,headSha,name > run.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          value = json.loads(Path('run.json').read_text(encoding='utf-8'))
+          if value.get('status') != 'completed' or value.get('conclusion') != 'success':
+              raise SystemExit(f"source run is not successful: {value}")
+          if value.get('name') != 'A-SCOPE Financial Request Manifest':
+              raise SystemExit(f"unexpected source workflow: {value.get('name')}")
+          PY
+          gh run download "$RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name "ascope-financial-requests-$RUN_ID" \
+            --dir incoming
+
+      - name: Validate source package and build release archive
+        id: validate
+        shell: python
+        env:
+          RUN_ID: ${{ steps.identity.outputs.run_id }}
+          RELEASE_TAG: ${{ steps.identity.outputs.tag }}
+          ASSET_NAME: ${{ steps.identity.outputs.asset }}
+        run: |
+          import csv
+          import hashlib
+          import json
+          import os
+          import zipfile
+          from pathlib import Path
+
+          root = Path('incoming')
+          manifest_path = root / 'financial_request_manifest.json'
+          selection_path = root / 'source_selection.json'
+          if not manifest_path.exists() or not selection_path.exists():
+              raise SystemExit('required financial request manifests are missing')
+          manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+          selection = json.loads(selection_path.read_text(encoding='utf-8'))
+          expected = {
+              'status': 'READY',
+              'through': '2026-07-30',
+              'batch_count': 27,
+              'standard_request_count': 5331,
+          }
+          for key, value in expected.items():
+              if manifest.get(key) != value:
+                  raise SystemExit(f"financial manifest mismatch: {key}={manifest.get(key)!r}, expected {value!r}")
+          if selection.get('status') != 'PASS':
+              raise SystemExit(f"source selection is not PASS: {selection}")
+          batches = sorted((root / 'financial_batches').glob('B*.csv'))
+          if len(batches) != 27:
+              raise SystemExit(f"expected 27 batches, found {len(batches)}")
+          row_count = 0
+          securities = set()
+          for path in batches:
+              with path.open('r', encoding='utf-8-sig', newline='') as handle:
+                  rows = list(csv.DictReader(handle))
+              row_count += len(rows)
+              securities.update(row['security_id'] for row in rows)
+          if row_count != 5331 or len(securities) != 5331:
+              raise SystemExit(
+                  f"request conservation failed: rows={row_count}, unique={len(securities)}"
+              )
+          asset = Path(os.environ['ASSET_NAME'])
+          with zipfile.ZipFile(asset, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
+              for path in sorted(root.rglob('*')):
+                  if path.is_file():
+                      archive.write(path, arcname=path.relative_to(root).as_posix())
+          digest = hashlib.sha256(asset.read_bytes()).hexdigest()
+          publication = {
+              'schema_version': 1,
+              'status': 'PASS',
+              'source_run_id': int(os.environ['RUN_ID']),
+              'release_tag': os.environ['RELEASE_TAG'],
+              'asset_name': asset.name,
+              'asset_sha256': digest,
+              'through': manifest['through'],
+              'batch_count': len(batches),
+              'standard_request_count': row_count,
+              'unique_security_count': len(securities),
+              'source_selection_status': selection['status'],
+          }
+          Path('publication_manifest.json').write_text(
+              json.dumps(publication, ensure_ascii=False, indent=2) + '\n',
+              encoding='utf-8',
+          )
+          with Path(os.environ['GITHUB_OUTPUT']).open('a', encoding='utf-8') as output:
+              output.write(f"sha256={digest}\n")
+
+      - name: Publish immutable public release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.identity.outputs.tag }}
+          ASSET: ${{ steps.identity.outputs.asset }}
+          SOURCE_RUN_ID: ${{ steps.identity.outputs.run_id }}
+          SHA256: ${{ steps.validate.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          notes=$(cat <<EOF
+          Validated A-SCOPE financial-request snapshot.
+
+          - source workflow run: $SOURCE_RUN_ID
+          - cutoff: 2026-07-30
+          - standard securities: 5,331
+          - batches: 27
+          - asset SHA256: $SHA256
+          - investment use: request orchestration only; this asset contains no screening result
+          EOF
+          )
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ASSET" publication_manifest.json \
+              --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" "$ASSET" publication_manifest.json \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "A-SCOPE financial requests 2026-07-30 v1" \
+              --notes "$notes"
+          fi
+
+      - name: Write publication summary
+        run: |
+          cat publication_manifest.json
+          echo "Release: https://github.com/$GITHUB_REPOSITORY/releases/tag/${{ steps.identity.outputs.tag }}"
+          echo "Asset: https://github.com/$GITHUB_REPOSITORY/releases/download/${{ steps.identity.outputs.tag }}/${{ steps.identity.outputs.asset }}"
