@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       discovery_artifact_run_id:
-        description: Optional run ID containing a reconciled security_master artifact
+        description: Optional compatible Live Smoke/Weekly run ID; blank selects latest successful main Live Smoke
         required: false
         default: ''
       through:
@@ -38,6 +38,7 @@ jobs:
       - name: Resolve source workflow run
         id: source
         env:
+          GH_TOKEN: ${{ github.token }}
           EVENT_NAME: ${{ github.event_name }}
           MANUAL_RUN_ID: ${{ inputs.discovery_artifact_run_id }}
           AUTOMATIC_RUN_ID: ${{ github.event.workflow_run.id }}
@@ -45,10 +46,46 @@ jobs:
           set -euo pipefail
           if [[ "$EVENT_NAME" == 'workflow_dispatch' ]]; then
             RUN_ID="$MANUAL_RUN_ID"
+            if [[ -z "$RUN_ID" ]]; then
+              RUN_ID="$(
+                gh api --method GET \
+                  "repos/${GITHUB_REPOSITORY}/actions/workflows/ascope-live-smoke.yml/runs" \
+                  -f branch=main \
+                  -f status=success \
+                  -f per_page=30 \
+                  --jq '.workflow_runs[] | select(.event != "pull_request") | .id' \
+                | head -n1
+              )"
+            fi
           else
             RUN_ID="$AUTOMATIC_RUN_ID"
           fi
-          [[ "$RUN_ID" =~ ^[0-9]+$ ]]
+          if [[ ! "$RUN_ID" =~ ^[0-9]+$ ]]; then
+            echo "::error::Unable to resolve a numeric source workflow run ID. Run A-SCOPE Live Smoke on main or enter its successful run ID explicitly."
+            exit 1
+          fi
+          RUN_JSON="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}")"
+          CONCLUSION="$(jq -r '.conclusion // ""' <<<"$RUN_JSON")"
+          EVENT="$(jq -r '.event // ""' <<<"$RUN_JSON")"
+          HEAD_BRANCH="$(jq -r '.head_branch // ""' <<<"$RUN_JSON")"
+          WORKFLOW_NAME="$(jq -r '.name // ""' <<<"$RUN_JSON")"
+          if [[ "$CONCLUSION" != 'success' ]]; then
+            echo "::error::Source run ${RUN_ID} is not successful (conclusion=${CONCLUSION})."
+            exit 1
+          fi
+          if [[ "$EVENT" == 'pull_request' ]]; then
+            echo "::error::Pull-request workflow artifacts are not accepted for live financial requests."
+            exit 1
+          fi
+          if [[ "$HEAD_BRANCH" != 'main' ]]; then
+            echo "::error::Source run ${RUN_ID} is from branch ${HEAD_BRANCH}, not main."
+            exit 1
+          fi
+          if [[ "$WORKFLOW_NAME" != 'A-SCOPE Live Smoke' && "$WORKFLOW_NAME" != 'A-SCOPE Weekly Reconciliation' ]]; then
+            echo "::error::Source run ${RUN_ID} belongs to incompatible workflow: ${WORKFLOW_NAME}."
+            exit 1
+          fi
+          echo "Resolved source run ${RUN_ID}: workflow=${WORKFLOW_NAME}, branch=${HEAD_BRANCH}, event=${EVENT}."
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
@@ -61,13 +98,20 @@ jobs:
           SOURCE_RUN_ID: ${{ steps.source.outputs.run_id }}
         run: |
           set -euo pipefail
-          STATUS_MANIFEST="$(find incoming -name status_reconciliation_manifest.json -type f | head -n1)"
-          test -n "$STATUS_MANIFEST"
+          mapfile -t STATUS_MANIFESTS < <(find incoming -name status_reconciliation_manifest.json -type f -print)
+          if [[ ${#STATUS_MANIFESTS[@]} -ne 1 ]]; then
+            echo "::error::Source run ${SOURCE_RUN_ID} must contain exactly one status_reconciliation_manifest.json; found ${#STATUS_MANIFESTS[@]}. The selected run may predate current-status reconciliation. Run A-SCOPE Live Smoke on main and retry with that run ID."
+            find incoming -maxdepth 4 -type f -print | sort
+            exit 1
+          fi
+          STATUS_MANIFEST="${STATUS_MANIFESTS[0]}"
           RECONCILED_ROOT="$(dirname "$STATUS_MANIFEST")"
           MASTER="$RECONCILED_ROOT/security_master.csv"
           DISCOVERY="$RECONCILED_ROOT/discovery_manifest.json"
-          test -f "$MASTER"
-          test -f "$DISCOVERY"
+          if [[ ! -f "$MASTER" || ! -f "$DISCOVERY" ]]; then
+            echo "::error::Reconciled artifact root is incomplete: ${RECONCILED_ROOT}."
+            exit 1
+          fi
           THROUGH="$(python - "$STATUS_MANIFEST" "$DISCOVERY" "$INPUT_THROUGH" <<'PY'
           import json
           import sys
