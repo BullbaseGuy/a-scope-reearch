@@ -23,8 +23,6 @@ def _result_frame(result: Any) -> pd.DataFrame:
         raise RuntimeError(
             f"BaoStock query failed: {getattr(result, 'error_msg', 'unknown error')}"
         )
-    if hasattr(result, "get_data"):
-        return result.get_data()
     rows: list[list[str]] = []
     while result.next():
         rows.append(result.get_row_data())
