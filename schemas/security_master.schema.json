@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "security_master",
+  "type": "object",
+  "required": [
+    "security_id",
+    "code",
+    "name",
+    "exchange",
+    "board",
+    "status",
+    "is_st",
+    "as_of_date",
+    "source_id"
+  ],
+  "properties": {
+    "security_id": {
+      "type": "string"
+    },
+    "code": {
+      "type": "string",
+      "pattern": "^[0-9]{6}$"
+    },
+    "name": {
+      "type": "string"
+    },
+    "exchange": {
+      "enum": [
+        "SSE",
+        "SZSE",
+        "BSE"
+      ]
+    },
+    "board": {
+      "enum": [
+        "SSE_MAIN",
+        "STAR",
+        "SZSE_MAIN",
+        "CHINEXT",
+        "BSE"
+      ]
+    },
+    "status": {
+      "type": "string"
+    },
+    "is_st": {
+      "type": [
+        "boolean",
+        "string"
+      ]
+    },
+    "as_of_date": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

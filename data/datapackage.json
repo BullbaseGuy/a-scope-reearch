@@ -1,0 +1,22 @@
+{
+  "profile": "tabular-data-package",
+  "name": "ascope-v1",
+  "version": "0.2.0",
+  "resources": [
+    {
+      "name": "security-master",
+      "path": "security_master.csv",
+      "schema": "../schemas/security_master.schema.json"
+    },
+    {
+      "name": "shortlist",
+      "path": "shortlist.csv",
+      "schema": "../schemas/shortlist.schema.json"
+    },
+    {
+      "name": "reos-bridge",
+      "path": "reos_bridge/ascope_to_reos_candidates.csv",
+      "schema": "../schemas/reos_bridge.schema.json"
+    }
+  ]
+}

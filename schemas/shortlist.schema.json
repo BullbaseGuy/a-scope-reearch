@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "shortlist",
+  "type": "object",
+  "required": [
+    "security_id",
+    "opportunity_score",
+    "investability_score",
+    "research_priority",
+    "data_confidence"
+  ],
+  "properties": {
+    "security_id": {
+      "type": "string"
+    },
+    "opportunity_score": {
+      "type": "number"
+    },
+    "investability_score": {
+      "type": "number"
+    },
+    "research_priority": {
+      "type": "number"
+    },
+    "data_confidence": {
+      "type": "number"
+    }
+  },
+  "additionalProperties": true
+}

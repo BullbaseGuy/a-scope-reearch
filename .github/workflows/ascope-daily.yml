@@ -1,0 +1,21 @@
+name: A-SCOPE Daily Incremental Guard
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "29 8 * * 1-5"
+permissions:
+  contents: read
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ascope
+      - run: python -m ascope validate-config
+      - name: Declare incremental-only boundary
+        run: |
+          echo "DAILY_MODE=INCREMENTAL_ONLY" >> "$GITHUB_STEP_SUMMARY"
+          echo "Full-market historical downloads are prohibited in this workflow." >> "$GITHUB_STEP_SUMMARY"

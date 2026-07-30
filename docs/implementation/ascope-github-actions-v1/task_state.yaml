@@ -1,0 +1,75 @@
+{
+  "schema_version": 2,
+  "state_revision": 3,
+  "task_id": "ascope-github-actions-v1",
+  "title": "A-SCOPE GitHub Actions product implementation",
+  "status": "VERIFYING",
+  "execution_status": "COMPLETED",
+  "acceptance": {
+    "domain": "ascope-product",
+    "status": "PASS",
+    "reason_code": "DETERMINISTIC_SOFTWARE_AND_BULK_DISCOVERY_PASS",
+    "details_path": "docs/implementation/ascope-github-actions-v1/W10_result.md"
+  },
+  "security_status": "PASS",
+  "working_branch": "feature/ascope-github-actions-v1",
+  "pull_request": 4,
+  "base_sha_at_start": "87c982211220caf96079648a8a607d0c230b5949",
+  "last_product_commit_sha": "9b8ff36b87a6c97f0c4b2a7e866122766b742173",
+  "last_state_commit_sha": null,
+  "current_stage": "W11",
+  "last_completed_stage": "W10",
+  "last_successful_step": "W10_all_deterministic_gates_and_live_bulk_smoke_passed",
+  "next_action": "Review and merge PR #4, then verify exact-merge Post-Merge finalization.",
+  "gate_results": {
+    "test": {
+      "status": "PASS",
+      "run_id": 30512650839
+    },
+    "state_consistency": {
+      "status": "PASS",
+      "run_id": 30512650831
+    },
+    "upgrade_compatibility": {
+      "status": "PASS",
+      "run_id": 30512650840
+    },
+    "fixture_regression": {
+      "status": "PASS",
+      "run_id": 30512650794
+    },
+    "secret_audit": {
+      "status": "PASS",
+      "run_id": 30512650834
+    },
+    "live_bulk_smoke": {
+      "status": "PASS",
+      "run_id": 30512650859,
+      "security_count": 6143
+    }
+  },
+  "retry_budget": {
+    "infrastructure": 3,
+    "agent_sessions": 0,
+    "agent_recovery_generations": 0,
+    "same_root_cause_limit": 2
+  },
+  "human_gate": {
+    "required": false,
+    "reason": null,
+    "minimum_action": null,
+    "resume_from": null
+  },
+  "post_merge": {
+    "status": "PENDING",
+    "merge_sha": null,
+    "verified_run_ids": []
+  },
+  "notification": {
+    "generation": 0,
+    "last_type": null,
+    "acknowledged": true,
+    "control_issue_number": 3
+  },
+  "updated_at_utc": "2026-07-30T04:05:10Z"
+}

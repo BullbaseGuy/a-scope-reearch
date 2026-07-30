@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "actions": [
+    {
+      "id": "MA-001",
+      "stage": "repository-settings",
+      "blocking": false,
+      "owner": "repository-admin",
+      "reason": "Configure stable required checks on main after product checks appear.",
+      "minimum_action": "Require Test, State Consistency and Upgrade Compatibility; optionally require A-SCOPE Fixture Regression.",
+      "workaround": "Use reviewed manual merge until the ruleset is configured.",
+      "status": "OPEN",
+      "resume_point": "No pause required."
+    },
+    {
+      "id": "MA-002",
+      "stage": "live-data",
+      "blocking": false,
+      "owner": "data-operator",
+      "reason": "A validated full-market point-in-time market and financial bundle is required for real screening.",
+      "minimum_action": "Upload or generate security_master, market_data, financial_quarterly and financial_annual.",
+      "workaround": "Continue fixture regression and bulk provider smoke; emit no real candidates.",
+      "status": "OPEN",
+      "resume_point": "Run A-SCOPE Monthly Screening with the validated bundle artifact."
+    },
+    {
+      "id": "MA-003",
+      "stage": "optional-runner",
+      "blocking": false,
+      "owner": "repository-admin",
+      "reason": "A self-hosted runner may later access local TDX files and reduce provider rate-limit risk.",
+      "minimum_action": "Configure only after repeated GitHub-hosted provider or storage failures.",
+      "workaround": "Use CNInfo bulk discovery, uploaded bundles and bounded GitHub-hosted workflows.",
+      "status": "DEFERRED",
+      "resume_point": "No pause required."
+    }
+  ]
+}

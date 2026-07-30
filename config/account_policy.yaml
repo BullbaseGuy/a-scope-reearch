@@ -1,0 +1,14 @@
+schema_version: 1
+account: SATELLITE
+nav_cny: 5000000
+max_active_cases: 10
+initial_probe_pct: 1.0
+standard_full_position_pct: 4.0
+single_name_hard_cap_pct: 8.0
+theme_hard_cap_pct: 25.0
+max_loss_per_thesis_pct: 1.0
+binary_event_position_cap_pct: 2.0
+margin_leverage_allowed: false
+automatic_trading: false
+st_executable_allowed: false
+special_situation_max_active: 2

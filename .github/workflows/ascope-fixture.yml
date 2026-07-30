@@ -1,0 +1,25 @@
+name: A-SCOPE Fixture Regression
+on:
+  push:
+    paths: ["src/ascope/**", "config/**", "schemas/**", "tests/test_ascope*.py", ".github/workflows/ascope-*.yml"]
+  pull_request:
+    paths: ["src/ascope/**", "config/**", "schemas/**", "tests/test_ascope*.py", ".github/workflows/ascope-*.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fixture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ascope
+      - run: python -m ascope fixture --output-dir 09_OUTPUTS/fixture --as-of-date 2026-07-29 --count 120
+      - run: python -m ascope validate-output --output-dir 09_OUTPUTS/fixture --mode fixture
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ascope-fixture-${{ github.run_id }}
+          path: 09_OUTPUTS/fixture
+          retention-days: 7

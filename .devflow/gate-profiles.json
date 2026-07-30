@@ -35,18 +35,44 @@
         "-m",
         "compileall",
         "-q",
-        "scripts"
+        "scripts",
+        "src",
+        "tests"
+      ],
+      [
+        "python",
+        "scripts/devflow/validate_docs.py"
+      ],
+      [
+        "python",
+        "scripts/devflow/validate_workflows.py"
+      ],
+      [
+        "python",
+        "scripts/devflow/validate_state.py",
+        "--all-active",
+        "--no-git"
+      ],
+      [
+        "python",
+        "scripts/devflow/upgrade_compatibility.py"
+      ],
+      [
+        "python",
+        "-m",
+        "ascope",
+        "validate-config"
       ],
       [
         "ruff",
         "check",
         "scripts",
+        "src",
         "tests"
       ],
       [
         "pytest",
-        "-q",
-        "tests"
+        "-q"
       ]
     ],
     "post-merge": [
@@ -65,9 +91,14 @@
         "scripts/devflow/validate_workflows.py"
       ],
       [
+        "python",
+        "-m",
+        "ascope",
+        "validate-config"
+      ],
+      [
         "pytest",
-        "-q",
-        "tests"
+        "-q"
       ]
     ],
     "agent-targeted": [
@@ -83,6 +114,26 @@
         "-q",
         "tests/test_devflow_descriptor.py",
         "tests/test_devflow_state.py"
+      ]
+    ],
+    "ascope-fixture": [
+      [
+        "python",
+        "-m",
+        "ascope",
+        "fixture",
+        "--output-dir",
+        "09_OUTPUTS/fixture"
+      ],
+      [
+        "python",
+        "-m",
+        "ascope",
+        "validate-output",
+        "--output-dir",
+        "09_OUTPUTS/fixture",
+        "--mode",
+        "fixture"
       ]
     ]
   }
