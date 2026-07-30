@@ -1,6 +1,13 @@
 name: A-SCOPE Live Smoke
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/ascope/adapters/**'
+      - 'config/provider_policy.yaml'
+      - '.github/workflows/ascope-live-smoke.yml'
+      - '.github/workflows/ascope-financials.yml'
   pull_request:
     paths:
       - 'src/ascope/adapters/**'

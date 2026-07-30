@@ -1,0 +1,97 @@
+name: A-SCOPE Live Bundle Intake
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Release tag containing one ascope-live-bundle-*.zip asset
+        required: true
+      as_of_date:
+        description: Optional date cross-check; blank trusts bundle_manifest.json
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  intake:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.event.release.tag_name, 'ascope-live-bundle-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ascope
+      - name: Resolve release tag
+        id: release
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == 'release' ]]; then TAG="$EVENT_TAG"; else TAG="$INPUT_TAG"; fi
+          [[ "$TAG" == ascope-live-bundle-* ]]
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+      - name: Download one immutable live bundle asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p incoming extracted
+          gh release download "$RELEASE_TAG" \
+            --pattern 'ascope-live-bundle-*.zip' \
+            --dir incoming
+          mapfile -t FILES < <(find incoming -maxdepth 1 -name 'ascope-live-bundle-*.zip' -type f)
+          [[ "${#FILES[@]}" -eq 1 ]]
+          unzip -q "${FILES[0]}" -d extracted
+      - name: Validate bundle manifest and point-in-time bundle
+        env:
+          INPUT_AS_OF_DATE: ${{ inputs.as_of_date }}
+        run: |
+          set -euo pipefail
+          MANIFEST="$(find extracted -name bundle_manifest.json -type f | head -n1)"
+          MASTER="$(find extracted -name security_master.csv -type f | head -n1)"
+          test -n "$MANIFEST"
+          test -n "$MASTER"
+          if grep -R -Fq 'FIXTURE_TEST_ONLY' extracted; then
+            echo 'Fixture marker found in live bundle.' >&2
+            exit 1
+          fi
+          AS_OF_DATE="$(python - "$MANIFEST" "$INPUT_AS_OF_DATE" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          value = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+          if value.get('status') != 'VALIDATED_LIVE_BUNDLE':
+              raise SystemExit('bundle is not validated')
+          if value.get('data_mode') != 'LIVE':
+              raise SystemExit('bundle is not LIVE')
+          manifest_date = value.get('as_of_date', '')
+          expected = sys.argv[2]
+          if expected and expected != manifest_date:
+              raise SystemExit('input as_of_date differs from bundle manifest')
+          print(manifest_date)
+          PY
+          )"
+          BUNDLE="$(dirname "$MASTER")"
+          python -m ascope validate-bundle \
+            --input-dir "$BUNDLE" \
+            --as-of-date "$AS_OF_DATE" \
+            --minimum-securities 5000 \
+            --minimum-market-days 120
+          printf '{"status":"PASS","as_of_date":"%s","release_tag":"%s"}\n' \
+            "$AS_OF_DATE" "${{ steps.release.outputs.tag }}" > "$BUNDLE/intake_manifest.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ascope-validated-live-bundle-${{ github.run_id }}
+          path: extracted
+          retention-days: 30
