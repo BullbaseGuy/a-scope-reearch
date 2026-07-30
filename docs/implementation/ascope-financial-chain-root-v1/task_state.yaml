@@ -1,0 +1,54 @@
+{
+  "schema_version": 2,
+  "state_revision": 3,
+  "task_id": "ascope-financial-chain-root-v1",
+  "title": "A-SCOPE reconciled financial request chain",
+  "status": "VERIFYING",
+  "execution_status": "COMPLETED",
+  "acceptance": {
+    "domain": "ascope-live-data-operations",
+    "status": "PASS",
+    "reason_code": "RECONCILED_ARTIFACT_SELECTION_GATES_PASS",
+    "details_path": "docs/implementation/ascope-financial-chain-root-v1/W02_result.md"
+  },
+  "security_status": "PASS",
+  "working_branch": "feature/ascope-financial-chain-root-v1",
+  "pull_request": 11,
+  "base_sha_at_start": "56bf9dd4de802fccda391850db28258c5aacdf9f",
+  "last_product_commit_sha": "c64016cfec649bfcf184360322d662e35640f067",
+  "last_state_commit_sha": null,
+  "current_stage": "W02",
+  "last_completed_stage": "W01",
+  "last_successful_step": "W02_premerge_gates_pass",
+  "next_action": "Merge PR 11, exact-merge verify, then confirm the automatic status-aware financial request artifact.",
+  "gate_results": {
+    "test": {"status": "PASS", "run_id": 30516405194},
+    "state_consistency": {"status": "PASS", "run_id": 30516405197},
+    "fixture_regression": {"status": "PASS", "run_id": 30516405178},
+    "secret_audit": {"status": "PASS", "run_id": 30516405196}
+  },
+  "retry_budget": {
+    "infrastructure": 3,
+    "agent_sessions": 0,
+    "agent_recovery_generations": 0,
+    "same_root_cause_limit": 2
+  },
+  "human_gate": {
+    "required": false,
+    "reason": null,
+    "minimum_action": null,
+    "resume_from": null
+  },
+  "post_merge": {
+    "status": "PENDING",
+    "merge_sha": null,
+    "verified_run_ids": []
+  },
+  "notification": {
+    "generation": 0,
+    "last_type": null,
+    "acknowledged": true,
+    "control_issue_number": 10
+  },
+  "updated_at_utc": "2026-07-30T05:24:00Z"
+}
