@@ -5,13 +5,17 @@ on:
     branches: [main]
     paths:
       - 'src/ascope/adapters/**'
+      - 'src/ascope/status.py'
       - 'config/provider_policy.yaml'
+      - 'pyproject.toml'
       - '.github/workflows/ascope-live-smoke.yml'
       - '.github/workflows/ascope-financials.yml'
   pull_request:
     paths:
       - 'src/ascope/adapters/**'
+      - 'src/ascope/status.py'
       - 'config/provider_policy.yaml'
+      - 'pyproject.toml'
       - '.github/workflows/ascope-live-smoke.yml'
   workflow_dispatch:
     inputs:
@@ -28,22 +32,30 @@ permissions:
 jobs:
   discovery-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-ascope
-      - name: Perform two-request bulk discovery
+      - name: Discover identity map and reconcile current status
         env:
           INPUT_AS_OF_DATE: ${{ inputs.as_of_date }}
         run: |
           set -euo pipefail
           AS_OF_DATE="${INPUT_AS_OF_DATE:-$(date -u +%F)}"
           python -m ascope discover \
-            --output-dir 09_OUTPUTS/live-smoke \
+            --output-dir 09_OUTPUTS/live-smoke/identity \
             --as-of-date "$AS_OF_DATE" \
             --minimum-count 5000
+          python -m ascope reconcile-status \
+            --security-master 09_OUTPUTS/live-smoke/identity/security_master.csv \
+            --output-dir 09_OUTPUTS/live-smoke \
+            --as-of-date "$AS_OF_DATE" \
+            --minimum-listed-count 5000 \
+            --minimum-bse-count 150
+          cp 09_OUTPUTS/live-smoke/identity/discovery_manifest.json \
+             09_OUTPUTS/live-smoke/discovery_manifest.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

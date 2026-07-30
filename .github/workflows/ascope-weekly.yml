@@ -14,7 +14,22 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-ascope
-      - run: python -m ascope discover --output-dir 09_OUTPUTS/weekly --as-of-date "$(date -u +%F)" --minimum-count 5000
+      - name: Refresh identity and current status
+        run: |
+          set -euo pipefail
+          AS_OF_DATE="$(date -u +%F)"
+          python -m ascope discover \
+            --output-dir 09_OUTPUTS/weekly/identity \
+            --as-of-date "$AS_OF_DATE" \
+            --minimum-count 5000
+          python -m ascope reconcile-status \
+            --security-master 09_OUTPUTS/weekly/identity/security_master.csv \
+            --output-dir 09_OUTPUTS/weekly \
+            --as-of-date "$AS_OF_DATE" \
+            --minimum-listed-count 5000 \
+            --minimum-bse-count 150
+          cp 09_OUTPUTS/weekly/identity/discovery_manifest.json \
+             09_OUTPUTS/weekly/discovery_manifest.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ascope-weekly-${{ github.run_id }}
