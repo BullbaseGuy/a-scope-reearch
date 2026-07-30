@@ -6,12 +6,18 @@ on:
       - feature/devflow-bootstrap
     paths:
       - .github/workflows/bootstrap-devflow.yml
+  pull_request:
+    types: [synchronize, reopened]
+    branches: [main]
+    paths:
+      - .github/workflows/bootstrap-devflow.yml
 
 permissions:
   contents: write
 
 jobs:
   bootstrap:
+    if: github.event_name == 'push' || github.head_ref == 'feature/devflow-bootstrap'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -115,7 +121,7 @@ jobs:
               'human_gate': {'required': False, 'reason': None},
               'notification': {'control_issue_number': 1, 'notify_completion': True},
               'next_action': 'Install reviewed workflow files through the GitHub connector, then run PR checks.',
-              'updated_at_utc': '2026-07-30T03:08:00Z',
+              'updated_at_utc': '2026-07-30T03:12:00Z',
           }
           (task_dir / 'task_state.yaml').write_text(json.dumps(state, indent=2) + '\n', encoding='utf-8')
 
