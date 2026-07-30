@@ -40,6 +40,9 @@ target-version = "py312"
 select = ["E", "F", "I", "UP", "B"]
 ignore = ["E501"]
 
+[tool.ruff.lint.per-file-ignores]
+"scripts/devflow/*.py" = ["I001"]
+
 [tool.pytest.ini_options]
 addopts = "-ra"
 testpaths = ["tests"]
