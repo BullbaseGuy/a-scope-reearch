@@ -1,3 +1,33 @@
-# Handoff
+# HANDOFF: devflow-bootstrap
 
-W00 and W01 passed. Resume at W02: install the reviewed workflow files through the GitHub connector, then inspect and repair deterministic PR checks. Do not repeat completed stages.
+## Current facts
+
+- Status: DONE
+- Execution: COMPLETED
+- Acceptance: repository-bootstrap/PASS
+- Security: PASS
+- Stage: W02
+- Branch: `feature/devflow-bootstrap`
+- Pull request: 2
+- Last successful step: `exact_merge_post_merge_pass`
+- Next action: `none`
+
+## Current block
+
+None
+
+## Minimum human action
+
+None
+
+## Resume order
+
+1. `task_state.yaml`
+2. current GitHub Checks and bounded artifacts
+3. current `Wxx_plan.md` / `Wxx_result.md`
+4. this file
+5. `docs/process/README.md`
+
+## Retry budget
+
+`{'infrastructure': 3, 'agent_sessions': 0, 'agent_recovery_generations': 0, 'same_root_cause_limit': 2}`
