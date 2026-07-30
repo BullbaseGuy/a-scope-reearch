@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "actions": [
+    {
+      "id": "MA-001",
+      "stage": "financial-data-production",
+      "blocking": false,
+      "owner": "data-operator",
+      "reason": "Full-market annual and quarterly point-in-time financial exports must be produced by the existing F10 process.",
+      "minimum_action": "Download the financial request artifact and execute all batches, preserving available_at.",
+      "workaround": "Software, discovery and fixture workflows continue; no live shortlist is emitted.",
+      "status": "OPEN",
+      "resume_point": "Merge batch outputs with `python -m ascope merge-financials`."
+    },
+    {
+      "id": "MA-002",
+      "stage": "market-data-production",
+      "blocking": false,
+      "owner": "data-operator",
+      "reason": "At least 120 trading days are required for at least 80 percent of the security master.",
+      "minimum_action": "Export market_data.csv from local TDX/mootdx or another bulk local source.",
+      "workaround": "Do not substitute a one-day snapshot; live screening remains closed.",
+      "status": "OPEN",
+      "resume_point": "Run the live bundle preparation wrapper."
+    },
+    {
+      "id": "MA-003",
+      "stage": "bundle-ingress",
+      "blocking": false,
+      "owner": "repository-admin",
+      "reason": "GitHub cannot receive a local file through workflow_dispatch; a release asset is the immutable ingress boundary.",
+      "minimum_action": "Publish one `ascope-live-bundle-YYYY-MM-DD.zip` asset under a matching release tag.",
+      "workaround": "Use GitHub CLI or the Releases web UI.",
+      "status": "OPEN",
+      "resume_point": "Bundle intake and monthly screening continue automatically."
+    },
+    {
+      "id": "MA-004",
+      "stage": "research-publication",
+      "blocking": false,
+      "owner": "research-reviewer",
+      "reason": "A real shortlist requires human review before immutable research publication.",
+      "minimum_action": "Review the monthly artifact and manually run A-SCOPE Publish Research Artifact.",
+      "workaround": "Keep the validated monthly artifact without publishing a release.",
+      "status": "OPEN",
+      "resume_point": "No software pause required."
+    }
+  ]
+}
