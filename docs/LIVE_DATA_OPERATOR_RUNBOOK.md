@@ -1,6 +1,22 @@
 # A-SCOPE live data operator runbook
 
-This runbook is the only manual bridge between the deterministic GitHub Actions software and the first real full-market screening. It keeps large datasets out of normal Git history.
+This runbook is the manual bridge between the deterministic GitHub Actions software and the first real full-market screening. Large market and financial datasets stay outside normal Git history.
+
+The operational checklist is also tracked in issue `#9`.
+
+## Current verified universe boundary
+
+The latest reconciled current-status smoke produced:
+
+- CNInfo identity rows: 6,143;
+- current listed rows: 5,538;
+- current listed non-ST standard path: 5,329;
+- listed ST/*ST high-risk path: 209;
+- delisted/archive rows: 339;
+- unresolved REVIEW rows: 266;
+- standard financial batches at size 200: approximately 27.
+
+Always trust the actual `financial_request_manifest.json` from the latest successful run instead of a hard-coded count.
 
 ## What is automatic
 
@@ -8,15 +24,16 @@ This runbook is the only manual bridge between the deterministic GitHub Actions 
 2. Publishing a release whose tag starts with `ascope-live-bundle-` automatically launches `A-SCOPE Live Bundle Intake`.
 3. A successful bundle intake automatically launches `A-SCOPE Monthly Screening`.
 4. Fixture content is rejected at every LIVE boundary.
+5. The financial workflow derives its input root from `status_reconciliation_manifest.json`; it does not use the nested identity-only security master.
 
 ## What remains manual
 
-- produce full-market annual and quarterly financial CSV files from the financial request batches;
-- produce at least 120 trading days of market history for at least 80% of the security master;
-- package and publish one validated live bundle release;
-- review the monthly shortlist before manually publishing a research release.
+- produce annual and quarterly financial CSV files from the generated F10 batches;
+- produce at least 120 trading days of market history for at least 80% of the reconciled security master;
+- package and publish one validated input bundle release;
+- review monthly output before manually publishing a research release.
 
-## Step 1: download the financial request artifact
+## Step 1 — Download the status-aware financial request artifact
 
 Open **Actions → A-SCOPE Financial Request Manifest → latest successful run → Artifacts** and download:
 
@@ -24,15 +41,18 @@ Open **Actions → A-SCOPE Financial Request Manifest → latest successful run 
 ascope-financial-requests-<run-id>
 ```
 
-The artifact contains:
+Confirm the artifact contains:
 
 ```text
 financial_request_manifest.csv
 financial_request_manifest.json
+source_selection.json
+high_risk_st_manifest.csv
+archive_or_review_manifest.csv
 financial_batches/B001.csv ...
 ```
 
-For about 6,143 securities and batch size 200, expect approximately 31 batches.
+`source_selection.json` must state that selection came from the status-reconciliation manifest parent. The standard request count should be close to 5,329 and the batch count close to 27, subject to the latest status snapshot.
 
 CLI alternative:
 
@@ -43,15 +63,17 @@ gh run download <RUN_ID> `
   --dir D:\ASCOPE\financial_requests
 ```
 
-## Step 2: run the existing F10 pipeline by batch
+## Step 2 — Run the existing F10 process by batch
 
-For each `financial_batches/Bxxx.csv`, ask the F10 process to export these exact table names somewhere under one common root:
+For each `financial_batches\Bxxx.csv`, write these exact table names below one common root:
 
 ```text
 D:\ASCOPE\financial_exports\B001\financial_annual.csv
 D:\ASCOPE\financial_exports\B001\financial_quarterly.csv
 ...
 ```
+
+Preserve completed batches and rerun only failed batches.
 
 Quarterly minimum fields:
 
@@ -67,9 +89,9 @@ Annual minimum fields:
 security_id,report_period,available_at,audit_opinion,internal_control_opinion
 ```
 
-Critical point-in-time rule: a row with `available_at` later than the screening date must remain in the source export if desired, but A-SCOPE will reject a bundle containing such future rows. Build the bundle for a specific as-of date using only information available by that date.
+Point-in-time rule: rows used in a bundle must have `available_at <= as_of_date`. Do not relabel the report period as the availability date.
 
-## Step 3: prepare market history
+## Step 3 — Prepare market history
 
 Create:
 
@@ -90,11 +112,24 @@ Recommended source order:
 3. a bulk source with a persistent local cache;
 4. per-security HTTP only for missing gaps.
 
-Coverage gate: at least 120 unique trading days for at least 80% of the security master. Do not generate one-day market snapshots as a substitute.
+Coverage gate:
 
-## Step 4: obtain `security_master.csv`
+- at least 120 unique trading days;
+- at least 80% of the reconciled security master reaches that depth;
+- no future trade date beyond the bundle `as_of_date`;
+- no one-day snapshot substituted for history.
 
-Download it from the same successful live-smoke artifact used to create the financial request manifest. Do not use a stale or manually edited code list.
+## Step 4 — Obtain the matching reconciled security master
+
+Download `security_master.csv` from the same successful Live Smoke or Weekly artifact that produced the financial request manifest.
+
+Confirm it includes:
+
+```text
+status,status_reason,is_st,status_as_of_date,status_snapshot_type
+```
+
+Do not use the nested `identity/security_master.csv`; that file is an archive/identity map and intentionally uses conservative `REVIEW` status.
 
 Suggested path:
 
@@ -102,9 +137,9 @@ Suggested path:
 D:\ASCOPE\security_master.csv
 ```
 
-## Step 5: create the validated release asset locally
+## Step 5 — Build and validate the immutable live bundle
 
-Clone the repository and install it once:
+Clone or update the repository and install it:
 
 ```powershell
 git clone https://github.com/BullbaseGuy/a-scope-reearch.git D:\ASCOPE\a-scope-reearch
@@ -113,7 +148,7 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[dev]"
 ```
 
-Run the supplied wrapper:
+Run:
 
 ```powershell
 .\scripts\windows\prepare_live_bundle.ps1 `
@@ -130,11 +165,9 @@ Expected output:
 D:\ASCOPE\bundle_output\ascope-live-bundle-2026-07-29.zip
 ```
 
-The command stops if the bundle fails security-count, orphan-ID, future-availability, market-history or fixture-contamination checks.
+The command stops on insufficient security coverage, orphan IDs, future availability, insufficient market history or fixture contamination. Read `live_bundle_validation.json` and fix the specific failing input rather than lowering thresholds blindly.
 
-## Step 6: publish the input release
-
-Use a distinct input tag namespace:
+## Step 6 — Publish the validated input release
 
 ```powershell
 gh release create ascope-live-bundle-2026-07-29 `
@@ -144,16 +177,16 @@ gh release create ascope-live-bundle-2026-07-29 `
   --notes "Validated point-in-time input bundle for research screening."
 ```
 
-Web UI alternative:
+Web alternative:
 
 1. Repository → Releases → Draft a new release.
-2. Tag: `ascope-live-bundle-2026-07-29`.
+2. Use tag `ascope-live-bundle-2026-07-29`.
 3. Upload exactly one `ascope-live-bundle-*.zip` asset.
-4. Publish the release.
+4. Publish.
 
-The release publication automatically starts bundle intake and then monthly screening. Do not upload financial or market CSV files directly into normal Git history.
+Release publication automatically starts bundle intake and monthly screening. Corrected inputs must use a new versioned tag; do not silently mutate an immutable input release.
 
-## Step 7: review the automatic monthly screening
+## Step 7 — Review the automatic monthly screening
 
 Open **Actions → A-SCOPE Monthly Screening → latest successful run** and download:
 
@@ -161,7 +194,7 @@ Open **Actions → A-SCOPE Monthly Screening → latest successful run** and dow
 ascope-monthly-<run-id>
 ```
 
-Review at least:
+Review:
 
 ```text
 run_manifest.json
@@ -175,25 +208,27 @@ Confirm:
 - `mode = LIVE`;
 - `investment_use = RESEARCH_ONLY`;
 - no fixture markers;
-- ST/*ST is not in the standard executable pool;
-- shortlist count is a soft result, not a quota;
+- ST/*ST is absent from the standard executable pool;
+- archive and REVIEW securities are absent from standard requests and shortlist;
+- shortlist count is treated as a soft outcome, not a quota;
 - `open_p0_count` and `next_data_request` are populated.
 
-## Step 8: manually publish only after review
+## Step 8 — Publish only after human review
 
-After reviewing the monthly artifact, run **A-SCOPE Publish Research Artifact** with:
+Run **A-SCOPE Publish Research Artifact** manually with:
 
 ```text
 source_run_id = <monthly screening run ID>
 release_tag   = ascope-research-2026-07-29-v1
 ```
 
-Publishing remains manual by design. A shortlist is a research queue, not a trading instruction.
+Publication remains manual by design. A shortlist is a research queue, not a trading instruction; selected names must still pass REOS-S evidence, valuation, premortem and position-budget gates.
 
 ## Failure recovery
 
-- If financial manifest generation fails, rerun the latest successful Live Smoke; do not repeatedly call per-security discovery APIs.
-- If one F10 batch fails, rerun only that batch and keep completed batch outputs.
-- If bundle validation fails, read `live_bundle_validation.json`; fix only the failing table or coverage issue.
-- If bundle intake fails, replace the release asset by creating a new versioned tag; do not silently mutate an immutable research input.
-- If monthly screening fails after intake passed, retain the validated bundle artifact and repair the screening code without recollecting data.
+- Financial manifest failure: rerun the latest successful Live Smoke; do not recollect per-security identity data.
+- One F10 batch failure: rerun only that batch and retain completed batch outputs.
+- Market gap: fill only missing securities or dates from a fallback source.
+- Bundle validation failure: fix the reported table or coverage problem.
+- Intake failure: publish a corrected versioned input release.
+- Monthly failure after intake PASS: retain the validated bundle and repair screening code without recollecting data.
