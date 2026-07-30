@@ -9,11 +9,11 @@ on:
   workflow_dispatch:
     inputs:
       discovery_artifact_run_id:
-        description: Optional run ID containing a validated security_master artifact
+        description: Optional run ID containing a reconciled security_master artifact
         required: false
         default: ''
       through:
-        description: Financial data through date; blank uses discovery as_of_date
+        description: Financial data through date; blank uses status as_of_date
         required: false
         default: ''
 
@@ -55,34 +55,68 @@ jobs:
           run-id: ${{ steps.source.outputs.run_id }}
           github-token: ${{ github.token }}
           path: incoming
-      - name: Validate discovery and create financial batches
+      - name: Select reconciled current universe and create financial batches
         env:
           INPUT_THROUGH: ${{ inputs.through }}
+          SOURCE_RUN_ID: ${{ steps.source.outputs.run_id }}
         run: |
           set -euo pipefail
-          MASTER="$(find incoming -name security_master.csv -type f | head -n1)"
-          DISCOVERY="$(find incoming -name discovery_manifest.json -type f | head -n1)"
-          test -n "$MASTER"
-          test -n "$DISCOVERY"
-          THROUGH="$INPUT_THROUGH"
-          if [[ -z "$THROUGH" ]]; then
-            THROUGH="$(python - "$DISCOVERY" <<'PY'
+          STATUS_MANIFEST="$(find incoming -name status_reconciliation_manifest.json -type f | head -n1)"
+          test -n "$STATUS_MANIFEST"
+          RECONCILED_ROOT="$(dirname "$STATUS_MANIFEST")"
+          MASTER="$RECONCILED_ROOT/security_master.csv"
+          DISCOVERY="$RECONCILED_ROOT/discovery_manifest.json"
+          test -f "$MASTER"
+          test -f "$DISCOVERY"
+          THROUGH="$(python - "$STATUS_MANIFEST" "$DISCOVERY" "$INPUT_THROUGH" <<'PY'
           import json
           import sys
           from pathlib import Path
 
-          value = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
-          if value.get('validation', {}).get('status') != 'PASS':
-              raise SystemExit('discovery validation is not PASS')
-          print(value['as_of_date'])
+          status = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+          discovery = json.loads(Path(sys.argv[2]).read_text(encoding='utf-8'))
+          expected = sys.argv[3]
+          if status.get('status') != 'PASS':
+              raise SystemExit('status reconciliation is not PASS')
+          if status.get('errors'):
+              raise SystemExit(f"status reconciliation has errors: {status['errors']}")
+          if int(status.get('listed_count', 0)) < 5000:
+              raise SystemExit('reconciled listed universe is unexpectedly small')
+          if discovery.get('validation', {}).get('status') != 'PASS':
+              raise SystemExit('identity discovery validation is not PASS')
+          status_date = status.get('as_of_date', '')
+          discovery_date = discovery.get('as_of_date', '')
+          if status_date != discovery_date:
+              raise SystemExit('identity and status snapshots use different dates')
+          print(expected or status_date)
           PY
           )"
-          fi
           python -m ascope financial-manifest \
             --security-master "$MASTER" \
             --output-dir 09_OUTPUTS/financial-requests \
             --through "$THROUGH" \
             --batch-size 200
+          python - "$STATUS_MANIFEST" "$SOURCE_RUN_ID" "$THROUGH" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          status = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+          output = {
+              'status': 'PASS',
+              'source_run_id': int(sys.argv[2]),
+              'through': sys.argv[3],
+              'listed_count': status['listed_count'],
+              'st_or_star_st_count': status['st_or_star_st_count'],
+              'archive_or_delisted_count': status['archive_or_delisted_count'],
+              'review_count': status['review_count'],
+              'selection_root': 'status_reconciliation_manifest_parent',
+          }
+          Path('09_OUTPUTS/financial-requests/source_selection.json').write_text(
+              json.dumps(output, ensure_ascii=False, indent=2) + '\n',
+              encoding='utf-8',
+          )
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ascope-financial-requests-${{ github.run_id }}
