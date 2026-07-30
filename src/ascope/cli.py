@@ -5,8 +5,10 @@ import json
 from pathlib import Path
 
 from ascope.adapters.cninfo import discover
+from ascope.bundle import package_bundle
 from ascope.config import load_settings
 from ascope.dashboard import build as build_dashboard
+from ascope.financial_merge import merge_exports
 from ascope.financial_requests import build as build_financial_requests
 from ascope.fixtures import generate
 from ascope.io import read_frame, write_frame, write_json
@@ -30,6 +32,24 @@ def command_discover(args: argparse.Namespace) -> int:
     write_json(args.output_dir / 'discovery_manifest.json', manifest)
     print(json.dumps(manifest, ensure_ascii=False, indent=2))
     return 0 if manifest['validation']['status'] == 'PASS' else 3
+
+
+def command_merge_financials(args: argparse.Namespace) -> int:
+    result = merge_exports(args.input_dir, args.output_dir)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+def command_package_bundle(args: argparse.Namespace) -> int:
+    result = package_bundle(
+        args.input_dir,
+        args.output_zip,
+        args.as_of_date,
+        minimum_securities=args.minimum_securities,
+        minimum_market_days=args.minimum_market_days,
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
 
 
 def main() -> int:
@@ -77,6 +97,19 @@ def main() -> int:
     p.add_argument('--through', required=True)
     p.add_argument('--batch-size', type=int, default=200)
     p.set_defaults(func=lambda a: (print(json.dumps(build_financial_requests(a.security_master, a.output_dir, a.through, a.batch_size), ensure_ascii=False, indent=2)), 0)[1])
+
+    p = sub.add_parser('merge-financials')
+    p.add_argument('--input-dir', type=Path, required=True)
+    p.add_argument('--output-dir', type=Path, required=True)
+    p.set_defaults(func=command_merge_financials)
+
+    p = sub.add_parser('package-bundle')
+    p.add_argument('--input-dir', type=Path, required=True)
+    p.add_argument('--output-zip', type=Path, required=True)
+    p.add_argument('--as-of-date', required=True)
+    p.add_argument('--minimum-securities', type=int, default=5000)
+    p.add_argument('--minimum-market-days', type=int, default=120)
+    p.set_defaults(func=command_package_bundle)
 
     args = parser.parse_args()
     return int(args.func(args))

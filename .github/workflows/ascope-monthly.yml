@@ -1,19 +1,31 @@
 name: A-SCOPE Monthly Screening
+
 on:
+  workflow_run:
+    workflows:
+      - A-SCOPE Live Bundle Intake
+    types: [completed]
   workflow_dispatch:
     inputs:
       bundle_artifact_run_id:
-        description: Run ID containing the validated live bundle
-        required: true
+        description: Optional run ID containing the validated live bundle
+        required: false
+        default: ''
       as_of_date:
-        description: Point-in-time screening date
-        required: true
-        default: "2026-07-29"
+        description: Optional point-in-time date; blank trusts bundle_manifest.json
+        required: false
+        default: ''
+
 permissions:
   actions: read
   contents: read
+
 jobs:
   screen:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -21,18 +33,58 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-ascope
+      - name: Resolve source workflow run
+        id: source
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          MANUAL_RUN_ID: ${{ inputs.bundle_artifact_run_id }}
+          AUTOMATIC_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == 'workflow_dispatch' ]]; then RUN_ID="$MANUAL_RUN_ID"; else RUN_ID="$AUTOMATIC_RUN_ID"; fi
+          [[ "$RUN_ID" =~ ^[0-9]+$ ]]
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          run-id: ${{ inputs.bundle_artifact_run_id }}
+          run-id: ${{ steps.source.outputs.run_id }}
           github-token: ${{ github.token }}
           path: incoming
-      - name: Find live bundle and validate
+      - name: Find live bundle, validate and screen
+        env:
+          INPUT_AS_OF_DATE: ${{ inputs.as_of_date }}
         run: |
-          BUNDLE="$(dirname "$(find incoming -name security_master.csv -type f | head -n1)")"
-          test -n "$BUNDLE"
-          python -m ascope validate-bundle --input-dir "$BUNDLE" --as-of-date "${{ inputs.as_of_date }}" --minimum-securities 5000 --minimum-market-days 120
-          python -m ascope screen --input-dir "$BUNDLE" --output-dir 09_OUTPUTS/monthly --as-of-date "${{ inputs.as_of_date }}" --mode live
-          python -m ascope validate-output --output-dir 09_OUTPUTS/monthly --mode live
+          set -euo pipefail
+          MASTER="$(find incoming -name security_master.csv -type f | head -n1)"
+          MANIFEST="$(find incoming -name bundle_manifest.json -type f | head -n1)"
+          test -n "$MASTER"
+          test -n "$MANIFEST"
+          BUNDLE="$(dirname "$MASTER")"
+          AS_OF_DATE="$(python - "$MANIFEST" "$INPUT_AS_OF_DATE" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          value = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+          manifest_date = value.get('as_of_date', '')
+          expected = sys.argv[2]
+          if expected and expected != manifest_date:
+              raise SystemExit('input as_of_date differs from bundle manifest')
+          print(manifest_date)
+          PY
+          )"
+          python -m ascope validate-bundle \
+            --input-dir "$BUNDLE" \
+            --as-of-date "$AS_OF_DATE" \
+            --minimum-securities 5000 \
+            --minimum-market-days 120
+          python -m ascope screen \
+            --input-dir "$BUNDLE" \
+            --output-dir 09_OUTPUTS/monthly \
+            --as-of-date "$AS_OF_DATE" \
+            --mode live
+          python -m ascope validate-output \
+            --output-dir 09_OUTPUTS/monthly \
+            --mode live
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ascope-monthly-${{ github.run_id }}
