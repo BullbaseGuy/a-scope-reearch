@@ -35,7 +35,7 @@
       "publish_branch": null,
       "pull_request": 6,
       "state_path": "docs/implementation/ascope-live-data-orchestration-v1/task_state.yaml",
-      "status": "VERIFYING",
+      "status": "DONE",
       "task_branch": null,
       "task_id": "ascope-live-data-orchestration-v1",
       "title": "A-SCOPE live data orchestration"
