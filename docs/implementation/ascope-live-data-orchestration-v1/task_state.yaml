@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "state_revision": 2,
+  "state_revision": 3,
   "task_id": "ascope-live-data-orchestration-v1",
   "title": "A-SCOPE live data orchestration",
   "status": "VERIFYING",
@@ -8,20 +8,26 @@
   "acceptance": {
     "domain": "ascope-live-data-operations",
     "status": "PASS",
-    "reason_code": "AUTOMATIC_CHAIN_AND_OPERATOR_TOOLS_IMPLEMENTED",
-    "details_path": "docs/implementation/ascope-live-data-orchestration-v1/W01_result.md"
+    "reason_code": "DETERMINISTIC_GATES_AND_LIVE_SMOKE_PASS",
+    "details_path": "docs/implementation/ascope-live-data-orchestration-v1/W02_result.md"
   },
   "security_status": "PASS",
   "working_branch": "feature/ascope-live-data-orchestration-v1",
   "pull_request": 6,
   "base_sha_at_start": "906c4c5400f920b15fedb772a814e1551f70a779",
-  "last_product_commit_sha": "eddc1fe9a5ce00769946fb600b1aa28ebdf0092c",
+  "last_product_commit_sha": "f761f64fb2159dab90c64352e5001cfc91816f28",
   "last_state_commit_sha": null,
   "current_stage": "W02",
   "last_completed_stage": "W01",
-  "last_successful_step": "W01_live_data_orchestration_implemented",
-  "next_action": "Run deterministic W02 gates and verify the automatic workflow chain.",
-  "gate_results": {},
+  "last_successful_step": "W02_premerge_gates_pass",
+  "next_action": "Merge PR 6, run exact-merge Post-Merge, then verify trusted automatic financial manifest generation.",
+  "gate_results": {
+    "test": {"status": "PASS", "run_id": 30514804787},
+    "state_consistency": {"status": "PASS", "run_id": 30514804744},
+    "fixture_regression": {"status": "PASS", "run_id": 30514804742},
+    "live_smoke": {"status": "PASS", "run_id": 30514804763},
+    "secret_audit": {"status": "PASS", "run_id": 30514804743}
+  },
   "retry_budget": {
     "infrastructure": 3,
     "agent_sessions": 0,
@@ -45,5 +51,5 @@
     "acknowledged": true,
     "control_issue_number": 5
   },
-  "updated_at_utc": "2026-07-30T04:46:34Z"
+  "updated_at_utc": "2026-07-30T04:48:21Z"
 }
