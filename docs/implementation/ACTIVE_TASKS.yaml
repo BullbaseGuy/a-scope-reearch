@@ -17,7 +17,7 @@
     {
       "task_id": "ascope-github-actions-v1",
       "title": "A-SCOPE GitHub Actions product implementation",
-      "status": "RUNNING",
+      "status": "VERIFYING",
       "branch": "feature/ascope-github-actions-v1",
       "task_branch": null,
       "publish_branch": null,
