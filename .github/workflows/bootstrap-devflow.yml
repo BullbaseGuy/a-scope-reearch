@@ -1,0 +1,194 @@
+name: Bootstrap Devflow
+
+on:
+  push:
+    branches:
+      - feature/devflow-bootstrap
+    paths:
+      - .github/workflows/bootstrap-devflow.yml
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out bootstrap branch
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: feature/devflow-bootstrap
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Import reviewed generic scaffold
+        shell: bash
+        env:
+          SCAFFOLD_SHA: ff6619b1f0ef6797ad1ca09fffa5db9475dc2482
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --no-checkout \
+            https://github.com/BullbaseGuy/demo-project.git /tmp/demo-project
+          git -C /tmp/demo-project checkout "$SCAFFOLD_SHA"
+          rsync -a --delete --exclude='.git' /tmp/demo-project/ ./
+
+      - name: Adapt scaffold for A-SCOPE
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('.')
+
+          (root / 'README.md').write_text('''# A-SCOPE\n\nA-SCOPE is a full-market A-share candidate discovery and evidence-upgrade system for a satellite investment account.\n\nThe repository uses the reviewed `BullbaseGuy/demo-project` control plane:\n\n- ChatGPT Web supervises requirements, plans, implementation and diagnosis.\n- `docs/implementation/**/task_state.yaml` is canonical state.\n- GitHub Actions executes deterministic state, scope, security and test gates.\n- Model/agent execution, automatic merge and paid relay probes are disabled.\n\n## Start here\n\n- [`docs/USAGE.md`](docs/USAGE.md)\n- [`docs/process/README.md`](docs/process/README.md)\n- [`docs/implementation/ACTIVE_TASKS.yaml`](docs/implementation/ACTIVE_TASKS.yaml)\n\nProduct implementation is performed in a separate governed task after this bootstrap PR is merged.\n''', encoding='utf-8')
+
+          pyproject = (root / 'pyproject.toml').read_text(encoding='utf-8')
+          pyproject = pyproject.replace(
+              'name = "generic-devflow-scaffold"',
+              'name = "a-scope-reearch"',
+          ).replace(
+              'description = "Repository-neutral ChatGPT Web and GitHub Actions execution scaffold"',
+              'description = "A-SCOPE full-market A-share candidate discovery system"',
+          ).replace('requires-python = ">=3.11"', 'requires-python = ">=3.12"')
+          pyproject = pyproject.replace('target-version = "py311"', 'target-version = "py312"')
+          (root / 'pyproject.toml').write_text(pyproject, encoding='utf-8')
+
+          project_path = root / '.devflow/project.json'
+          project = json.loads(project_path.read_text(encoding='utf-8'))
+          project['project']['default_branch'] = 'main'
+          project['project']['allowed_actors'] = ['tyxq428']
+          project['project']['notification_mentions'] = ['tyxq428']
+          project['project']['python_version'] = '3.12'
+          project['features']['automatic_merge'] = False
+          project['features']['agent_execution'] = 'disabled'
+          project['features']['relay_paid_probe'] = False
+          project['features']['branch_gc_execute'] = False
+          project_path.write_text(json.dumps(project, indent=2) + '\n', encoding='utf-8')
+
+          task_id = 'devflow-bootstrap'
+          task_dir = root / 'docs/implementation' / task_id
+          task_dir.mkdir(parents=True, exist_ok=True)
+          active = {
+              'schema_version': 2,
+              'tasks': [{
+                  'task_id': task_id,
+                  'branch': 'feature/devflow-bootstrap',
+                  'task_branch': None,
+                  'publish_branch': None,
+                  'pull_request': None,
+                  'state_path': f'docs/implementation/{task_id}/task_state.yaml',
+                  'post_merge_profile': 'post-merge',
+                  'status': 'VERIFYING',
+              }],
+          }
+          (root / 'docs/implementation/ACTIVE_TASKS.yaml').write_text(
+              json.dumps(active, indent=2) + '\n', encoding='utf-8'
+          )
+
+          state = {
+              'schema_version': 2,
+              'task_id': task_id,
+              'status': 'VERIFYING',
+              'execution_status': 'COMPLETED',
+              'branch': 'feature/devflow-bootstrap',
+              'task_branch': None,
+              'publish_branch': None,
+              'pull_request': None,
+              'expected_base_sha': None,
+              'current_work_package': 'W02',
+              'completed_work_packages': ['W00', 'W01'],
+              'post_merge_profile': 'post-merge',
+              'risk_class': 'medium',
+              'auto_merge': False,
+              'acceptance': {'domain': 'repository-bootstrap', 'status': 'PASS'},
+              'security_status': 'PASS',
+              'post_merge': {'status': 'PENDING', 'merge_sha': None},
+              'human_gate': {'required': False, 'reason': None},
+              'notification': {
+                  'control_issue_number': 1,
+                  'notify_completion': True,
+              },
+              'next_action': 'Open draft PR, run deterministic checks, repair failures, and merge after PASS.',
+              'updated_at_utc': '2026-07-30T03:00:00Z',
+          }
+          (task_dir / 'task_state.yaml').write_text(
+              json.dumps(state, indent=2) + '\n', encoding='utf-8'
+          )
+
+          docs = {
+              '00_contract.md': '''# Contract: devflow-bootstrap\n\nInstall the reviewed deterministic ChatGPT Web + GitHub Actions control plane before A-SCOPE product implementation.\n\n## In scope\n\n- canonical state and task documentation;\n- state, scope, secret, test and upgrade gates;\n- bounded infrastructure recovery and incident notification;\n- exact-merge post-merge verification.\n\n## Out of scope\n\n- A-SCOPE product implementation;\n- automatic merge;\n- all model/agent calls;\n- paid relay probes.\n''',
+              '01_master_plan.md': '''# Master plan\n\n1. W00 freeze scope and safety defaults.\n2. W01 import and adapt the reviewed generic scaffold.\n3. W02 run and repair deterministic PR checks.\n4. W03 merge, close canonical state and start the product task.\n''',
+              'STATUS.md': '''# Status\n\n- Status: VERIFYING\n- Execution: COMPLETED\n- Acceptance: PASS\n- Security: PASS\n- Post-merge: PENDING\n''',
+              'HANDOFF.md': '''# Handoff\n\nThe reviewed scaffold is imported and adapted. Resume by opening the draft PR, inspecting checks and repairing only demonstrated failures. Do not repeat W00 or W01.\n''',
+              'DECISIONS.md': '''# Decisions\n\n1. Reuse `BullbaseGuy/demo-project@ff6619b1f0ef6797ad1ca09fffa5db9475dc2482`.\n2. Keep bootstrap and product implementation in separate PRs.\n3. Disable automatic merge and all agent/model execution.\n4. Record non-blocking repository settings and continue.\n''',
+              'W00_plan.md': '# W00 plan\n\nFreeze scope, task state and security defaults.\n',
+              'W00_result.md': '# W00 result\n\nPASS. Scope and safety defaults are persisted.\n',
+              'W01_plan.md': '# W01 plan\n\nImport and adapt the reviewed generic Devflow scaffold.\n',
+              'W01_result.md': '# W01 result\n\nPASS. Scaffold imported at the fixed reviewed commit and adapted for A-SCOPE.\n',
+          }
+          for name, content in docs.items():
+              (task_dir / name).write_text(content, encoding='utf-8')
+
+          manual = {
+              'schema_version': 1,
+              'actions': [
+                  {
+                      'id': 'MA-001',
+                      'stage': 'post-bootstrap',
+                      'blocking': False,
+                      'owner': 'repository-admin',
+                      'reason': 'Actions write permission is needed for automatic closeout and incident comments.',
+                      'minimum_action': 'Set Actions workflow permissions to Read and write.',
+                      'workaround': 'The supervisor performs equivalent writes through the GitHub connector.',
+                      'status': 'OPEN',
+                      'resume_point': 'No pause required.',
+                  },
+                  {
+                      'id': 'MA-002',
+                      'stage': 'post-bootstrap',
+                      'blocking': False,
+                      'owner': 'repository-admin',
+                      'reason': 'Stable required-check names must exist before a main ruleset is configured.',
+                      'minimum_action': 'Require Test, State Consistency and Upgrade Compatibility after they appear.',
+                      'workaround': 'Use reviewed manual merges until configured.',
+                      'status': 'OPEN',
+                      'resume_point': 'No pause required.',
+                  },
+              ],
+          }
+          (task_dir / 'MANUAL_ACTIONS.yaml').write_text(
+              json.dumps(manual, indent=2) + '\n', encoding='utf-8'
+          )
+
+          # This one-shot workflow must not remain in the reviewed scaffold.
+          bootstrap_workflow = root / '.github/workflows/bootstrap-devflow.yml'
+          if bootstrap_workflow.exists():
+              bootstrap_workflow.unlink()
+          PY
+
+      - name: Validate imported control plane
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ".[dev]"
+          python -m compileall -q scripts tests
+          python scripts/devflow/validate_docs.py
+          python scripts/devflow/validate_workflows.py
+          python scripts/devflow/validate_state.py --all-active --no-git
+          python scripts/devflow/upgrade_compatibility.py
+          ruff check scripts tests
+          pytest -q tests
+
+      - name: Commit and push imported scaffold
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: bootstrap deterministic devflow"
+          git push origin HEAD:feature/devflow-bootstrap
