@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "state_revision": 1,
+  "state_revision": 2,
   "task_id": "ascope-security-status-v1",
   "title": "A-SCOPE current security status reconciliation",
   "status": "VERIFYING",
@@ -13,14 +13,14 @@
   },
   "security_status": "PASS",
   "working_branch": "feature/ascope-security-status-v1",
-  "pull_request": null,
+  "pull_request": 8,
   "base_sha_at_start": "02907f5706ed7d7fafb1027e161682c7a7461bb9",
-  "last_product_commit_sha": "3316463be3359dd0bf0ac77d051f52bfc182a1ef",
+  "last_product_commit_sha": "b845562596ae64b1f69b93884063c7cf40cd7b17",
   "last_state_commit_sha": null,
   "current_stage": "W02",
   "last_completed_stage": "W01",
   "last_successful_step": "W01_status_reconciliation_implemented",
-  "next_action": "Open the governed PR and run the live status smoke.",
+  "next_action": "Run deterministic W02 gates and inspect the live status provider counts.",
   "gate_results": {},
   "retry_budget": {
     "infrastructure": 3,
@@ -45,5 +45,5 @@
     "acknowledged": true,
     "control_issue_number": 7
   },
-  "updated_at_utc": "2026-07-30T05:00:00Z"
+  "updated_at_utc": "2026-07-30T05:01:00Z"
 }
