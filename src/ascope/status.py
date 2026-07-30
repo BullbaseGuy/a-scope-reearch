@@ -33,9 +33,6 @@ def reconcile(
     result = identity.copy()
     result["status"] = "REVIEW"
     result["status_reason"] = "IDENTITY_ONLY_NOT_CURRENT_STATUS"
-    archive = result["name"].map(_archive_marker)
-    result.loc[archive, "status"] = "DELISTED_OR_ARCHIVE"
-    result.loc[archive, "status_reason"] = "ARCHIVE_NAME_MARKER"
 
     status_columns = [
         "security_id",
@@ -66,6 +63,14 @@ def reconcile(
     result.loc[matched & result["provider_list_date"].notna(), "list_date"] = result.loc[
         matched & result["provider_list_date"].notna(), "provider_list_date"
     ]
+
+    # Current provider membership does not override an explicit delisting/archive name.
+    # This captures securities that remain visible during a delisting period, such as
+    # names ending in “退”, without dropping their identity history.
+    archive = result["name"].map(_archive_marker)
+    result.loc[archive, "status"] = "DELISTED_OR_ARCHIVE"
+    result.loc[archive, "status_reason"] = "CURRENT_OR_ARCHIVE_NAME_MARKER"
+
     result["is_st"] = result["name"].astype(str).str.upper().str.contains("ST", regex=False)
     result["status_as_of_date"] = as_of_date
     result["status_snapshot_type"] = "CURRENT_RECONCILIATION"
