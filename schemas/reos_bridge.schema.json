@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "reos_bridge",
+  "type": "object",
+  "required": [
+    "security_id",
+    "primary_archetype",
+    "evidence_stage",
+    "open_p0_count",
+    "next_data_request"
+  ],
+  "properties": {
+    "security_id": {
+      "type": "string"
+    },
+    "primary_archetype": {
+      "type": "string"
+    },
+    "evidence_stage": {
+      "type": "string"
+    },
+    "open_p0_count": {
+      "type": "integer"
+    },
+    "next_data_request": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

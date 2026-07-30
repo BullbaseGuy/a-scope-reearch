@@ -1,0 +1,34 @@
+schema_version: 1
+as_of_date_default: "2026-07-29"
+soft_targets:
+  machine_candidates: [500, 800]
+  research_queue: [50, 100]
+  deep_research: [15, 30]
+  executable_watch: [0, 10]
+gates:
+  minimum_median_amount_60d_cny: 3000000
+  standard_liquidity_cny: 30000000
+  minimum_listing_days_for_research: 60
+  minimum_listing_days_for_executable: 120
+  block_st: true
+  block_negative_equity: true
+  block_bad_audit: true
+  block_unresolved_fund_occupation: true
+thresholds:
+  research_opportunity_score: 60
+  research_investability_score: 55
+  research_data_confidence: 60
+  deep_research_priority_percentile: 80
+score_weights:
+  opportunity:
+    change_strength: 0.25
+    evidence_maturity: 0.20
+    expectation_gap: 0.20
+    catalyst_clarity: 0.15
+    valuation_odds: 0.20
+  investability:
+    financial_quality: 0.25
+    risk_resilience: 0.25
+    liquidity_execution: 0.15
+    portfolio_fit: 0.15
+    data_confidence: 0.20

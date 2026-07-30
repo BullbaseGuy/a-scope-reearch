@@ -1,0 +1,17 @@
+name: A-SCOPE Backtest Framework
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  framework:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ascope
+      - run: pytest -q tests/test_ascope_backtest.py tests/test_ascope_live_guard.py
+      - name: Record boundary
+        run: echo "No historical performance is produced without an explicit point-in-time dataset." >> "$GITHUB_STEP_SUMMARY"

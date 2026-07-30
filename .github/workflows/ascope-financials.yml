@@ -1,0 +1,38 @@
+name: A-SCOPE Financial Request Manifest
+on:
+  workflow_dispatch:
+    inputs:
+      discovery_artifact_run_id:
+        description: Run ID containing a validated security_master artifact
+        required: true
+      through:
+        description: Financial data through date
+        required: true
+        default: "2026-07-29"
+permissions:
+  actions: read
+  contents: read
+jobs:
+  manifest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ascope
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          run-id: ${{ inputs.discovery_artifact_run_id }}
+          github-token: ${{ github.token }}
+          path: incoming
+      - name: Locate validated security master
+        run: |
+          MASTER="$(find incoming -name security_master.csv -type f | head -n1)"
+          test -n "$MASTER"
+          python -m ascope financial-manifest --security-master "$MASTER" --output-dir 09_OUTPUTS/financial-requests --through "${{ inputs.through }}" --batch-size 200
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ascope-financial-requests-${{ github.run_id }}
+          path: 09_OUTPUTS/financial-requests
+          retention-days: 30

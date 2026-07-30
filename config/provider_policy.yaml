@@ -1,0 +1,29 @@
+schema_version: 1
+principles:
+  - bulk_before_per_security
+  - official_before_secondary
+  - incremental_before_full_refresh
+  - cache_before_retry
+  - fail_closed_on_incomplete_universe
+providers:
+  security_master:
+    primary: CNINFO_BULK
+    calls_per_refresh_expected: 2
+    refresh: weekly_or_stale
+    fallback: EXCHANGE_RECONCILIATION
+  market_history:
+    primary: LOCAL_TDX_OR_MOOTDX
+    fallback_order: [TENCENT_BATCH, BAOSTOCK, EASTMONEY_GAP_ONLY]
+    full_refresh: prohibited_in_daily_workflow
+  financials:
+    primary: TDX_PROFESSIONAL_FINANCE_OR_LOCAL_F10_BUNDLE
+    fallback_order: [OFFICIAL_REPORT_EXTRACTION]
+  announcements:
+    primary: CNINFO_BY_EXCHANGE_AND_DATE
+    per_security_polling: prohibited
+network:
+  timeout_seconds: 35
+  attempts: 4
+  retry_statuses: [408, 425, 429, 500, 502, 503, 504]
+  retry_after_respected: true
+  minimum_full_a_share_count: 5000

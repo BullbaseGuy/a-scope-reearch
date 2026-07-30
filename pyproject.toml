@@ -1,32 +1,45 @@
 [build-system]
-requires = ["setuptools>=69", "wheel"]
+requires = ["setuptools>=75", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "a-scope-reearch"
-version = "0.1.0"
-description = "A-SCOPE full-market A-share candidate discovery system"
+version = "0.2.0"
+description = "A-SCOPE full-market A-share candidate discovery and evidence-upgrade system"
 requires-python = ">=3.12"
-license = {text = "MIT"}
-dependencies = []
+dependencies = [
+  "PyYAML>=6.0,<7",
+  "requests>=2.32,<3",
+  "pandas>=2.2,<3",
+  "numpy>=2.0,<3",
+  "pyarrow>=17,<24",
+  "duckdb>=1.1,<2",
+  "jsonschema>=4.23,<5",
+]
 
 [project.optional-dependencies]
 dev = [
-  "pytest>=8.3,<10",
+  "pytest>=8.3,<9",
   "ruff>=0.9,<1",
 ]
+market = [
+  "mootdx>=0.11,<1",
+]
 
-[tool.setuptools]
-packages = []
+[project.scripts]
+ascope = "ascope.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP"]
+select = ["E", "F", "I", "UP", "B"]
 ignore = ["E501"]
 
 [tool.pytest.ini_options]
+addopts = "-ra"
 testpaths = ["tests"]
-addopts = "-q"

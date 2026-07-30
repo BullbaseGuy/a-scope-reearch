@@ -1,0 +1,40 @@
+name: A-SCOPE Monthly Screening
+on:
+  workflow_dispatch:
+    inputs:
+      bundle_artifact_run_id:
+        description: Run ID containing the validated live bundle
+        required: true
+      as_of_date:
+        description: Point-in-time screening date
+        required: true
+        default: "2026-07-29"
+permissions:
+  actions: read
+  contents: read
+jobs:
+  screen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ascope
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          run-id: ${{ inputs.bundle_artifact_run_id }}
+          github-token: ${{ github.token }}
+          path: incoming
+      - name: Find live bundle and validate
+        run: |
+          BUNDLE="$(dirname "$(find incoming -name security_master.csv -type f | head -n1)")"
+          test -n "$BUNDLE"
+          python -m ascope validate-bundle --input-dir "$BUNDLE" --as-of-date "${{ inputs.as_of_date }}" --minimum-securities 5000 --minimum-market-days 120
+          python -m ascope screen --input-dir "$BUNDLE" --output-dir 09_OUTPUTS/monthly --as-of-date "${{ inputs.as_of_date }}" --mode live
+          python -m ascope validate-output --output-dir 09_OUTPUTS/monthly --mode live
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ascope-monthly-${{ github.run_id }}
+          path: 09_OUTPUTS/monthly
+          retention-days: 90

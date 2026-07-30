@@ -18,7 +18,7 @@ Implement the A-SCOPE full-market A-share discovery, evidence-upgrade, screening
 - margin leverage;
 - paid data as a mandatory dependency;
 - fabricated live candidate lists;
-- model/agent execution or automatic merge.
+- model/agent execution.
 
 ## Acceptance
 

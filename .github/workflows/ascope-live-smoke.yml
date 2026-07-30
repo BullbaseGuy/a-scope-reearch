@@ -1,0 +1,32 @@
+name: A-SCOPE Live Smoke
+on:
+  workflow_dispatch:
+    inputs:
+      as_of_date:
+        description: Snapshot date
+        required: false
+        default: "2026-07-29"
+  schedule:
+    - cron: "17 8 * * 1-5"
+permissions:
+  contents: read
+jobs:
+  discovery-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ascope
+      - name: Perform two-request bulk discovery
+        env:
+          AS_OF_DATE: ${{ inputs.as_of_date || '2026-07-29' }}
+        run: python -m ascope discover --output-dir 09_OUTPUTS/live-smoke --as-of-date "$AS_OF_DATE" --minimum-count 5000
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: ascope-live-smoke-${{ github.run_id }}
+          path: 09_OUTPUTS/live-smoke
+          if-no-files-found: warn
+          retention-days: 14

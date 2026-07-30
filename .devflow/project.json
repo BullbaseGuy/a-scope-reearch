@@ -53,7 +53,10 @@
       ".env",
       ".env.*",
       "secrets/**",
-      "migrations/**"
+      "migrations/**",
+      "config/account_policy.yaml",
+      "config/provider_policy.yaml",
+      "schemas/**"
     ]
   },
   "recovery": {

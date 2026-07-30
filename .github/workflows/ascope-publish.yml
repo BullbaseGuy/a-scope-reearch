@@ -1,0 +1,35 @@
+name: A-SCOPE Publish Research Artifact
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: Validated monthly screening run ID
+        required: true
+      release_tag:
+        description: Immutable research release tag
+        required: true
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          run-id: ${{ inputs.source_run_id }}
+          github-token: ${{ github.token }}
+          path: release-assets
+      - name: Reject fixture artifacts
+        run: |
+          if grep -R -Fq 'FIXTURE_TEST_ONLY' release-assets; then exit 1; fi
+      - name: Create immutable research release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tar -czf ascope-research-${{ inputs.release_tag }}.tar.gz -C release-assets .
+          gh release create "${{ inputs.release_tag }}" ascope-research-${{ inputs.release_tag }}.tar.gz --title "A-SCOPE ${{ inputs.release_tag }}" --notes "Research-only output; not investment advice."
