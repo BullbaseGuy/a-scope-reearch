@@ -1,0 +1,58 @@
+name: Devflow Branch GC
+
+on:
+  workflow_dispatch:
+    inputs:
+      execute:
+        description: Request deletion; repository policy still defaults to dry-run
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55
+        with:
+          python-version: '3.12'
+      - name: Collect bounded branch metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh pr list --state open --limit 100 --json headRefName \
+            --jq '[.[] | {head: .headRefName}]' > /tmp/open-prs.json
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/branches?per_page=100" \
+            --jq '[.[].name | select(startswith("task/agent-") or startswith("agent/"))]' \
+            > /tmp/candidates.json
+      - name: Build dry-run branch plan
+        env:
+          EXECUTE_REQUESTED: ${{ inputs.execute }}
+        run: |
+          set -euo pipefail
+          ARGS=()
+          while IFS= read -r branch; do
+            ARGS+=(--candidate "$branch")
+          done < <(jq -r '.[]' /tmp/candidates.json)
+          if [[ "$EXECUTE_REQUESTED" == 'true' ]]; then
+            ARGS+=(--execute)
+          fi
+          python scripts/devflow/branch_gc.py \
+            --active-tasks docs/implementation/ACTIVE_TASKS.yaml \
+            --open-prs /tmp/open-prs.json \
+            "${ARGS[@]}" \
+            --output branch-gc-plan.json
+      - name: Publish plan only
+        run: cat branch-gc-plan.json >> "$GITHUB_STEP_SUMMARY"

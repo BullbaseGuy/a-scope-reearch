@@ -1,0 +1,35 @@
+name: Codex Candidate Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      task_id:
+        description: Reviewed task identifier retained for disabled-mode eligibility review
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  disabled-eligibility-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out trusted control plane
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          path: control
+          persist-credentials: false
+      - name: Check out read-only workspace
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          path: workspace
+          persist-credentials: false
+      - name: Stop before model invocation
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'CODEX_MODEL_INVOCATION=DISABLED' >> "$GITHUB_STEP_SUMMARY"
+          echo 'codex_candidate_review.py retained for deterministic eligibility review only.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'The reviewed command boundary remains: --control-root .' >> "$GITHUB_STEP_SUMMARY"

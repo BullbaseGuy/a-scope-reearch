@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "actions": [
+    {
+      "id": "MA-001",
+      "stage": "post-bootstrap",
+      "blocking": false,
+      "owner": "repository-admin",
+      "reason": "Configure main required checks only after stable check names appear.",
+      "minimum_action": "Require Test, State Consistency and Upgrade Compatibility.",
+      "workaround": "Use reviewed manual merges until configured.",
+      "status": "OPEN",
+      "resume_point": "No pause required."
+    }
+  ]
+}

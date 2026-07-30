@@ -1,0 +1,75 @@
+name: Devflow Product Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      task_id:
+        required: true
+        type: string
+      task_branch:
+        required: true
+        type: string
+      task_commit_sha:
+        required: true
+        type: string
+      publish_branch:
+        required: true
+        type: string
+      publish_commit_sha:
+        required: true
+        type: string
+      expected_base_sha:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  gate-disabled:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out trusted control plane
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          path: control
+          persist-credentials: false
+      - name: Check out immutable task descriptor
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ inputs.task_commit_sha }}
+          path: task-data
+          persist-credentials: false
+      - name: Check out immutable candidate
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ inputs.publish_commit_sha }}
+          path: candidate
+          persist-credentials: false
+      - name: Enforce disabled agent policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'Agent execution is disabled by .devflow/project.json.'
+          echo 'Run trusted targeted gate: --config-root control --repo-root candidate --workdir candidate' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Run trusted full gate: disabled until a separately reviewed activation.' >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+  notify-review:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Disabled write boundary
+        run: echo 'Automatic candidate publication is disabled.'
+
+  merge:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Merge exact reviewed candidate without executing it
+        run: echo 'Automatic merge is disabled.'
