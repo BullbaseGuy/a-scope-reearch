@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "actions": [
+    {
+      "id": "MA-001",
+      "stage": "historical-backtest",
+      "blocking": false,
+      "owner": "data-operator",
+      "reason": "Current status reconciliation cannot substitute for historical point-in-time listing status.",
+      "minimum_action": "Provide dated status snapshots or reconstruct status history before historical backtesting.",
+      "workaround": "Use the current status snapshot only for current live research operations.",
+      "status": "OPEN",
+      "resume_point": "No pause for current screening operations."
+    }
+  ]
+}

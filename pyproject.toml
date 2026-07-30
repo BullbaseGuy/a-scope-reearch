@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "a-scope-reearch"
-version = "0.2.0"
+version = "0.2.1"
 description = "A-SCOPE full-market A-share candidate discovery and evidence-upgrade system"
 requires-python = ">=3.12"
 dependencies = [
@@ -15,6 +15,7 @@ dependencies = [
   "pyarrow>=17,<24",
   "duckdb>=1.1,<2",
   "jsonschema>=4.23,<5",
+  "baostock>=0.9.3,<1",
 ]
 
 [project.optional-dependencies]
