@@ -39,6 +39,19 @@
       "task_branch": null,
       "task_id": "ascope-live-data-orchestration-v1",
       "title": "A-SCOPE live data orchestration"
+    },
+    {
+      "branch": "feature/ascope-security-status-v1",
+      "current_stage": "W02",
+      "notify_completion": true,
+      "post_merge_profile": "post-merge",
+      "publish_branch": null,
+      "pull_request": null,
+      "state_path": "docs/implementation/ascope-security-status-v1/task_state.yaml",
+      "status": "VERIFYING",
+      "task_branch": null,
+      "task_id": "ascope-security-status-v1",
+      "title": "A-SCOPE current security status reconciliation"
     }
   ]
 }
