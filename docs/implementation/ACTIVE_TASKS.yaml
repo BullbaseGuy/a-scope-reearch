@@ -61,7 +61,7 @@
       "publish_branch": null,
       "pull_request": 11,
       "state_path": "docs/implementation/ascope-financial-chain-root-v1/task_state.yaml",
-      "status": "VERIFYING",
+      "status": "DONE",
       "task_branch": null,
       "task_id": "ascope-financial-chain-root-v1",
       "title": "A-SCOPE reconciled financial request chain"
