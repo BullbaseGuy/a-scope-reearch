@@ -53,7 +53,8 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install -e ".[dev]"
-          python -m compileall -q scripts tests .bootstrap
+          python -m compileall -q scripts tests
+          rm -rf .bootstrap/__pycache__
           python scripts/devflow/validate_docs.py
           python scripts/devflow/validate_state.py --all-active --no-git
           ruff check scripts tests .bootstrap
